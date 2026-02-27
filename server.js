@@ -97,10 +97,16 @@ app.post("/add-shop", upload.single('shopImage'), async (req, res) => {
     }
 });
 
-app.get("/get-shops", (req, res) => {
-    db.query("SELECT * FROM shops", (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json(result.rows);
+// สำหรับดึงข้อมูลรายละเอียดร้านค้า (ชื่อร้าน, รูปหน้าร้าน, พิกัด)
+app.get("/get-shop/:id", (req, res) => {
+    const shopId = req.params.id;
+    db.query("SELECT * FROM shops WHERE id = $1", [shopId], (err, result) => {
+        if (err) {
+            console.error("DB Error:", err);
+            return res.status(500).json(err);
+        }
+        if (result.rows.length === 0) return res.status(404).json({ message: "ไม่พบข้อมูลร้านค้า" });
+        res.json(result.rows[0]);
     });
 });
 
