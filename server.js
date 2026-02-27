@@ -165,6 +165,15 @@ app.delete("/delete-food/:id", (req, res) => {
     });
 });
 
+// เพิ่มไว้ก่อนส่วน START SERVER
+app.get("/get-food/:id", (req, res) => {
+    db.query("SELECT * FROM foods WHERE id = $1", [req.params.id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        if (result.rows.length === 0) return res.status(404).json({ message: "ไม่พบข้อมูล" });
+        res.json(result.rows[0]);
+    });
+});
+
 // ================= START SERVER ================= //
 
 const PORT = process.env.PORT || 3000;
