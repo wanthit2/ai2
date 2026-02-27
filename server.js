@@ -186,6 +186,19 @@ app.get("/get-foods/:shopId", (req, res) => {
         res.json(result.rows);
     });
 });
+
+// เพิ่ม Route สำหรับลบเมนูอาหาร
+app.delete("/delete-food/:id", (req, res) => {
+    const foodId = req.params.id;
+    db.query("DELETE FROM foods WHERE id = $1", [foodId], (err, result) => {
+        if (err) {
+            console.error("Delete Error:", err);
+            return res.status(500).json({ message: "ไม่สามารถลบข้อมูลได้" });
+        }
+        res.json({ message: "ลบเมนูอาหารเรียบร้อยแล้ว" });
+    });
+});
+
 // ================= START SERVER ================= //
 
 const PORT = process.env.PORT || 3000;
