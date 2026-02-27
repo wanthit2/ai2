@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>แก้ไขโปรไฟล์</title>
+  <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+
+<div class="profile-container">
+
+  <div class="profile-card">
+    
+    <h2>แก้ไขโปรไฟล์</h2>
+
+    <!-- Avatar -->
+    <div class="avatar-section">
+      <img src="https://i.pravatar.cc/120" id="avatarPreview">
+      <input type="file" id="avatarInput">
+    </div>
+
+    <label>Username</label>
+    <input type="text" id="username" disabled>
+
+    <label>Email</label>
+    <input type="email" id="email">
+
+    <label>รหัสผ่านใหม่</label>
+    <input type="password" id="password" placeholder="เว้นว่างถ้าไม่เปลี่ยน">
+
+    <button class="save-btn" onclick="updateProfile()">💾 บันทึกการเปลี่ยนแปลง</button>
+    <button class="back-btn" onclick="goHome()">← กลับหน้าหลัก</button>
+
+  </div>
+
+</div>
+
+<script src="profile.js"></script>
+</body>
+</html>

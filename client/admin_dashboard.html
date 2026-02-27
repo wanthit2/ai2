@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Food Finder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text-main: #1e293b;
+        }
+
+        body { font-family: 'Prompt', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header { text-align: center; margin-bottom: 40px; }
+        header h2 { color: var(--primary); font-size: 2rem; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 40px; }
+        
+        .card { 
+            background: var(--white); padding: 25px; border-radius: 16px; 
+            border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        h3 { margin-top: 0; color: var(--primary); display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: #64748b; }
+        
+        input, select {
+            width: 100%; padding: 12px; border: 1.5px solid #e2e8f0;
+            border-radius: 10px; box-sizing: border-box; outline: none; font-family: 'Prompt';
+            transition: 0.3s;
+        }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+        .preview-box {
+            width: 100%; height: 140px; border: 2px dashed #cbd5e1;
+            border-radius: 12px; margin-bottom: 10px; display: flex;
+            align-items: center; justify-content: center; overflow: hidden; background: #f1f5f9;
+        }
+        .preview-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        button {
+            width: 100%; padding: 14px; border: none; border-radius: 10px;
+            cursor: pointer; font-weight: 600; transition: 0.2s; font-family: 'Prompt'; font-size: 1rem;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        /* Table Styling */
+        .section-table { margin-top: 50px; background: white; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #f8fafc; padding: 15px; text-align: left; font-size: 0.9rem; color: #64748b; border-bottom: 2px solid #edf2f7; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+        
+        .badge { padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
+        .badge-cat { background: #eef2ff; color: var(--primary); }
+        
+        .action-btns { display: flex; gap: 8px; }
+        .btn-edit { background: var(--warning); color: white; padding: 8px 12px; font-size: 0.85rem; width: auto; }
+        .btn-delete { background: var(--danger); color: white; padding: 8px 12px; font-size: 0.85rem; width: auto; }
+
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2>🛠️ ระบบจัดการหลังบ้าน (Admin)</h2>
+    </header>
+    
+    <div class="grid">
+        <div class="card">
+            <h3>🏢 เพิ่มร้านค้าใหม่</h3>
+            <div class="form-group">
+                <label>รูปหน้าร้าน</label>
+                <div class="preview-box" id="shopPreview"><small>ยังไม่มีรูปภาพ</small></div>
+                <input type="file" id="shopImageInput" accept="image/*" onchange="preview(event, 'shopPreview')">
+            </div>
+            <div class="form-group">
+                <label>ชื่อร้านค้า</label>
+                <input type="text" id="shopNameInput" placeholder="ระบุชื่อร้าน เช่น ครัวเจ๊แดง">
+            </div>
+            <div class="form-group">
+                <label>พิกัดร้าน (จาก Google Maps)</label>
+                <input type="text" id="mapLinkInput" placeholder="วางลิงก์ Google Maps เพื่อดึงพิกัด" oninput="extractCoords(this.value)">
+                <input type="hidden" id="latInput"><input type="hidden" id="lngInput">
+                <div id="coordStatus" style="font-size: 0.75rem; margin-top:8px; font-weight: 600;"></div>
+            </div>
+            <button class="btn-primary" onclick="saveShop()">➕ บันทึกข้อมูลร้านค้า</button>
+        </div>
+
+        <div class="card">
+            <h3>🍜 เพิ่มเมนูอาหาร</h3>
+            <div class="form-group">
+                <label>รูปอาหาร</label>
+                <div class="preview-box" id="foodPreview"><small>ยังไม่มีรูปภาพ</small></div>
+                <input type="file" id="foodImageInput" accept="image/*" onchange="preview(event, 'foodPreview')">
+            </div>
+            <div class="form-group">
+                <label>เลือกร้านค้าที่สังกัด</label>
+                <select id="shopSelect"><option value="">-- กำลังโหลดร้านค้า... --</option></select>
+            </div>
+            <div class="form-group">
+                <label>หมวดหมู่เมนู</label>
+                <select id="foodCategoryInput">
+                    <option value="ทั่วไป">ทั่วไป</option>
+                    <option value="เมนูข้าว">เมนูข้าว</option>
+                    <option value="เมนูเส้น">เมนูเส้น</option>
+                    <option value="ของหวาน">ของหวาน</option>
+                    <option value="เครื่องดื่ม">เครื่องดื่ม</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ชื่อเมนู และ ราคา</label>
+                <div style="display: flex; gap: 12px;">
+                    <input type="text" id="foodNameInput" placeholder="ชื่อเมนู" style="flex: 2;">
+                    <input type="number" id="foodPriceInput" placeholder="ราคา (บาท)" style="flex: 1;">
+                </div>
+            </div>
+            <button class="btn-success" onclick="saveFood()">💾 บันทึกเมนูอาหาร</button>
+        </div>
+    </div>
+
+    <div class="section-table">
+        <h3>🍴 รายการอาหารทั้งหมด (จัดการข้อมูล)</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>รูปภาพ</th>
+                        <th>ชื่อเมนู</th>
+                        <th>ร้านค้า</th>
+                        <th>หมวดหมู่</th>
+                        <th>ราคา</th>
+                        <th>การจัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="allFoodTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://ai2-production-18cb.up.railway.app";
+
+    // --- ฟังก์ชันพรีวิวรูปภาพ ---
+    function preview(event, viewerId) {
+        const viewer = document.getElementById(viewerId);
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => viewer.innerHTML = `<img src="${e.target.result}">`;
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // --- ฟังก์ชันดึงละติจูด/ลองจิจูดจากลิงก์ Google Maps ---
+    function extractCoords(link) {
+        const regex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+        const match = link.match(regex);
+        if (match) {
+            document.getElementById("latInput").value = match[1];
+            document.getElementById("lngInput").value = match[2];
+            const status = document.getElementById("coordStatus");
+            status.innerText = `✅ ตรวจพบพิกัด: ${match[1]}, ${match[2]}`;
+            status.style.color = "#10b981";
+        }
+    }
+
+    // --- โหลดข้อมูลร้านค้าและอาหารทั้งหมดเมื่อเปิดหน้าเว็บ ---
+    async function loadInitialData() {
+        try {
+            // โหลดร้านค้าเข้า Dropdown
+            const resShops = await fetch(`${API_URL}/get-shops`);
+            const shops = await resShops.json();
+            const select = document.getElementById("shopSelect");
+            select.innerHTML = '<option value="">-- เลือกสาขา/ร้านค้า --</option>';
+            shops.forEach(s => select.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+
+            // โหลดรายการอาหารลงตาราง
+            const resFoods = await fetch(`${API_URL}/get-all-foods`); 
+            const foods = await resFoods.json();
+            const tableBody = document.getElementById("allFoodTableBody");
+            tableBody.innerHTML = "";
+
+            if(foods.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>ยังไม่มีข้อมูลเมนูอาหาร</td></tr>";
+                return;
+            }
+
+            foods.forEach(f => {
+                const img = f.image_url ? `${API_URL}/uploads/${f.image_url}` : 'https://via.placeholder.com/50';
+                tableBody.innerHTML += `
+                    <tr>
+                        <td><img src="${img}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;"></td>
+                        <td><strong>${f.name}</strong></td>
+                        <td><small>📍 ${f.shop_name || 'ไม่ระบุร้าน'}</small></td>
+                        <td><span class="badge badge-cat">${f.category || 'ทั่วไป'}</span></td>
+                        <td><span style="color:var(--primary); font-weight:600;">฿${f.price}</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-edit" onclick="location.href='edit-food2.html?id=${f.id}'">✏️ แก้ไข</button>
+                                <button class="btn-delete" onclick="deleteFood(${f.id})">🗑️ ลบ</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (error) {
+            console.error("Error loading data:", error);
+        }
+    }
+
+    // --- บันทึกร้านค้าใหม่ ---
+    async function saveShop() {
+        const name = document.getElementById("shopNameInput").value;
+        if(!name) return alert("กรุณาระบุชื่อร้าน");
+
+        const formData = new FormData();
+        formData.append('shopName', name);
+        formData.append('shopImage', document.getElementById("shopImageInput").files[0]);
+        formData.append('lat', document.getElementById("latInput").value);
+        formData.append('lng', document.getElementById("lngInput").value);
+
+        const res = await fetch(`${API_URL}/add-shop`, { method: 'POST', body: formData });
+        const result = await res.json();
+        alert(result.message);
+        location.reload(); // รีโหลดเพื่ออัปเดต List ร้านค้า
+    }
+
+    // --- บันทึกเมนูอาหารใหม่ ---
+    async function saveFood() {
+        const shopId = document.getElementById("shopSelect").value;
+        const name = document.getElementById("foodNameInput").value;
+        const price = document.getElementById("foodPriceInput").value;
+
+        if(!shopId || !name || !price) return alert("กรุณากรอกข้อมูลอาหารให้ครบถ้วน");
+
+        const formData = new FormData();
+        formData.append('shopId', shopId);
+        formData.append('foodName', name);
+        formData.append('price', price);
+        formData.append('category', document.getElementById("foodCategoryInput").value);
+        formData.append('foodImage', document.getElementById("foodImageInput").files[0]);
+
+        const res = await fetch(`${API_URL}/add-food`, { method: 'POST', body: formData });
+        const result = await res.json();
+        alert(result.message);
+        loadInitialData(); // รีโหลดตารางอาหาร
+    }
+
+    // --- ลบข้อมูลอาหาร ---
+    async function deleteFood(id) {
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบเมนูนี้? (ข้อมูลจะหายถาวร)")) return;
+        
+        try {
+            const res = await fetch(`${API_URL}/delete-food/${id}`, { method: 'DELETE' });
+            const result = await res.json();
+            alert(result.message);
+            loadInitialData();
+        } catch (error) {
+            alert("เกิดข้อผิดพลาดในการลบข้อมูล");
+        }
+    }
+
+    // รันฟังก์ชันโหลดข้อมูลทันทีที่เปิดหน้า
+    window.onload = loadInitialData;
+</script>
+
+</body>
+</html>

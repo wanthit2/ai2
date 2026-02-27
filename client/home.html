@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Finder - ค้นหาร้านอาหาร</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    /* เพิ่มเติม Style เล็กน้อยให้เข้ากับดีไซน์ใหม่ */
+    body { font-family: 'Prompt', sans-serif; }
+    .restaurant-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+        gap: 20px; 
+        padding: 20px 0;
+    }
+    .card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    .card img { width: 100%; height: 180px; object-fit: cover; }
+    .card-info { padding: 15px; }
+    .card-info h3 { margin: 0; font-size: 1.1rem; }
+    .card-info p { color: #4f46e5; font-size: 0.85rem; margin: 5px 0; }
+    .open-tag { color: #10b981; font-size: 0.8rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <h2 class="logo" onclick="location.href='home.html'" style="cursor:pointer">🍜 FoodFinder</h2>
+  <ul class="menu">
+    <li onclick="location.href='home.html'">หน้าหลัก</li>
+    <li onclick="goRestaurants()">ร้านอาหาร</li>
+    <li onclick="location.href='reviews.html'">รีวิว</li>
+    <li>ติดต่อ</li>
+    <li onclick="location.href='profile.html'">โปรไฟล์</li>
+  </ul>
+  <button class="login-btn" id="authBtn">Login</button>
+</nav>
+
+<section class="hero">
+  <h1>ค้นหาร้านอาหารใกล้คุณ</h1>
+  <div class="search-box">
+    <input type="text" id="homeSearch" placeholder="ค้นหาร้าน หรือ เมนูอาหาร...">
+    <button onclick="handleSearch()">ค้นหา</button>
+  </div>
+</section>
+
+<section class="categories">
+  <h2>หมวดหมู่อาหาร</h2>
+  <div class="category-list">
+    <div class="category" onclick="searchByCategory('เส้น')">🍜<p>ก๋วยเตี๋ยว</p></div>
+    <div class="category" onclick="searchByCategory('พิซซ่า')">🍕<p>พิซซ่า</p></div>
+    <div class="category" onclick="searchByCategory('ซูชิ')">🍣<p>ญี่ปุ่น</p></div>
+    <div class="category" onclick="searchByCategory('สุขภาพ')">🥗<p>สุขภาพ</p></div>
+    <div class="category" onclick="searchByCategory('คาเฟ่')">☕<p>คาเฟ่</p></div>
+    <div class="category" onclick="searchByCategory('ฟาสต์ฟู้ด')">🍔<p>ฟาสต์ฟู้ด</p></div>
+  </div>
+</section>
+
+<section class="restaurants">
+  <h2>ร้านแนะนำใกล้คุณ</h2>
+  <div class="restaurant-grid" id="featuredRestaurants">
+    <p>กำลังโหลดร้านแนะนำ...</p>
+  </div>
+</section>
+
+<script>
+const API_URL = "https://ai2-production-18cb.up.railway.app";
+
+window.onload = function() {
+    loadFeaturedShops();
+};
+
+// 1. ดึงข้อมูลร้านค้ามาโชว์ที่หน้าแรก (ดึงมา 3-4 ร้านล่าสุด)
+async function loadFeaturedShops() {
+    try {
+        const response = await fetch(`${API_URL}/get-shops`);
+        const shops = await response.json();
+        
+        const display = document.getElementById("featuredRestaurants");
+        display.innerHTML = "";
+
+        // เอาแค่ 3 ร้านแรกมาโชว์เป็นตัวอย่าง
+        shops.slice(0, 3).forEach(shop => {
+            const imgPath = shop.image_url 
+                ? `${API_URL}/uploads/${shop.image_url}` 
+                : 'https://via.placeholder.com/400x300?text=No+Image';
+
+            display.innerHTML += `
+                <div class="card" onclick="location.href='restaurant.html?id=${shop.id}'">
+                    <img src="${imgPath}">
+                    <div class="card-info">
+                        <h3>${shop.name}</h3>
+                        <p>${shop.hashtags || '#ร้านแนะนำ'}</p>
+                        <span class="open-tag">● เปิดอยู่</span>
+                    </div>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error("Error loading shops:", error);
+    }
+}
+
+// 2. ระบบค้นหาจากหน้าแรก
+function handleSearch() {
+    const keyword = document.getElementById("homeSearch").value;
+    if(keyword) {
+        // ส่งคำค้นหาไปที่หน้าร้านอาหารทั้งหมด
+        window.location.href = `restaurants.html?search=${encodeURIComponent(keyword)}`;
+    }
+}
+
+function searchByCategory(cat) {
+    window.location.href = `restaurants.html?search=${encodeURIComponent(cat)}`;
+}
+
+function goRestaurants() {
+  window.location.href = "restaurants.html";
+}
+</script>
+
+<script src="auth.js"></script>
+</body>
+</html>

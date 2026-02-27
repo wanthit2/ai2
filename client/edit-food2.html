@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แก้ไขเมนูอาหาร - Food System v2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #64748b;
+            --bg: #f1f5f9;
+            --white: #ffffff;
+            --text-main: #0f172a;
+        }
+
+        body { 
+            font-family: 'Prompt', sans-serif; 
+            background: var(--bg); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+        }
+        
+        .edit-container { 
+            background: var(--white); 
+            padding: 40px; 
+            border-radius: 24px; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 550px;
+        }
+
+        .header-section { text-align: center; margin-bottom: 30px; }
+        .header-section h2 { margin: 0; color: var(--text-main); font-size: 1.75rem; }
+        .header-section p { color: var(--secondary); margin: 5px 0 0; font-size: 0.9rem; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-main); font-size: 0.95rem; }
+        
+        input, select {
+            width: 100%; padding: 14px; border: 2px solid #e2e8f0;
+            border-radius: 12px; box-sizing: border-box; outline: none; font-family: 'Prompt';
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+
+        .image-upload-area {
+            width: 100%; height: 220px; border: 2px dashed #cbd5e1;
+            border-radius: 16px; margin-bottom: 12px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; background: #f8fafc;
+            position: relative; cursor: pointer;
+        }
+        .image-upload-area img { width: 100%; height: 100%; object-fit: cover; }
+        .image-upload-area .placeholder-text { color: #94a3b8; text-align: center; font-size: 0.85rem; }
+
+        .btn-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 30px; }
+        
+        button {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            cursor: pointer; font-weight: 600; font-family: 'Prompt'; font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-save { background: var(--primary); color: white; }
+        .btn-save:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        
+        .btn-back { background: transparent; color: var(--secondary); border: 1.5px solid #e2e8f0; }
+        .btn-back:hover { background: #f8fafc; color: var(--text-main); }
+
+        .loader { color: var(--primary); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="edit-container">
+    <div class="header-section">
+        <h2>✏️ แก้ไขเมนูอาหาร</h2>
+        <p>ระบุข้อมูลที่ต้องการเปลี่ยนแปลงด้านล่าง</p>
+    </div>
+    
+    <div class="form-group">
+        <label>รูปภาพประกอบ (คลิกที่รูปเพื่อเปลี่ยน)</label>
+        <div class="image-upload-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
+            <div class="placeholder-text" id="placeholder">📷 คลิกเพื่ออัปโหลดรูปใหม่</div>
+            <img src="" id="currentImage" style="display:none;">
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleImageChange(event)">
+    </div>
+
+    <div class="form-group">
+        <label>ชื่อเมนูอาหาร</label>
+        <input type="text" id="foodName" placeholder="เช่น ข้าวผัดกะเพราไข่ดาว">
+    </div>
+
+    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div>
+            <label>หมวดหมู่</label>
+            <select id="foodCategory">
+                <option value="ทั่วไป">ทั่วไป</option>
+                <option value="เมนูข้าว">เมนูข้าว</option>
+                <option value="เมนูเส้น">เมนูเส้น</option>
+                <option value="ของหวาน">ของหวาน</option>
+                <option value="เครื่องดื่ม">เครื่องดื่ม</option>
+                <option value="ซูชิ">ซูชิ</option>
+            </select>
+        </div>
+        <div>
+            <label>ราคา (บาท)</label>
+            <input type="number" id="foodPrice" placeholder="0.00">
+        </div>
+    </div>
+
+    <div class="btn-stack">
+        <button class="btn-save" onclick="submitEdit()">💾 บันทึกการแก้ไขข้อมูล</button>
+        <button class="btn-back" onclick="history.back()">🔙 ย้อนกลับ</button>
+    </div>
+</div>
+
+<script>
+    const API_URL = "http://localhost:3000";
+    const params = new URLSearchParams(window.location.search);
+    const foodId = params.get('id');
+
+    // 1. ดึงข้อมูลเดิมมาเติมในฟอร์ม
+    window.onload = async () => {
+        if (!foodId) {
+            alert("❌ ไม่พบรหัสอาหาร (ID)");
+            window.location.href = 'admin.html';
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/get-food/${foodId}`);
+            if (!res.ok) throw new Error("Fetch failed");
+            const food = await res.json();
+
+            document.getElementById('foodName').value = food.name;
+            document.getElementById('foodPrice').value = food.price;
+            document.getElementById('foodCategory').value = food.category || 'ทั่วไป';
+            
+            if (food.image_url) {
+                const imgTag = document.getElementById('currentImage');
+                imgTag.src = `${API_URL}/uploads/${food.image_url}`;
+                imgTag.style.display = 'block';
+                document.getElementById('placeholder').style.display = 'none';
+            }
+        } catch (err) {
+            console.error(err);
+            alert("⚠️ ไม่สามารถโหลดข้อมูลเมนูได้");
+        }
+    };
+
+    // 2. จัดการการเลือกรูปภาพใหม่
+    function handleImageChange(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imgTag = document.getElementById('currentImage');
+                imgTag.src = e.target.result;
+                imgTag.style.display = 'block';
+                document.getElementById('placeholder').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // 3. ส่งข้อมูลไปอัปเดตที่เซิร์ฟเวอร์
+    async function submitEdit() {
+        const name = document.getElementById('foodName').value;
+        const price = document.getElementById('foodPrice').value;
+        const category = document.getElementById('foodCategory').value;
+        const fileInput = document.getElementById('fileInput');
+
+        if (!name || !price) {
+            alert("⚠️ กรุณากรอกชื่อเมนูและราคาให้ครบถ้วน");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('id', foodId);
+        formData.append('name', name);
+        formData.append('price', price);
+        formData.append('category', category);
+        
+        if (fileInput.files[0]) {
+            formData.append('foodImage', fileInput.files[0]);
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/update-food`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                alert("✅ แก้ไขข้อมูลเรียบร้อย!");
+                window.location.href = 'admin_dashboard.html';
+            } else {
+                alert("❌ เกิดข้อผิดพลาด: " + data.message);
+            }
+        } catch (err) {
+            alert("❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+        }
+    }
+</script>
+
+</body>
+</html>

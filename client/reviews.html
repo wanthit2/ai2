@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รีวิวร้านอาหาร - FoodFinder</title>
+  <link rel="stylesheet" href="reviews.css">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <h2 class="logo" onclick="goHome()">🍜 FoodFinder</h2>
+  <button class="back-btn" onclick="goBack()">← กลับ</button>
+</nav>
+
+<div class="review-container">
+  <h1>🏆 ร้านยอดนิยม</h1>
+  <div id="topRestaurants" class="top-list"></div>
+
+  <div class="review-box">
+    <h1>เขียนรีวิวของคุณ</h1>
+
+    <div class="review-form">
+      <div class="user-info-card">
+          <label>รีวิวในนาม:</label>
+          <div id="userNameDisplay" class="current-user-name">กำลังตรวจสอบการล็อกอิน...</div>
+          <input type="hidden" id="name"> 
+      </div>
+
+      <label for="restaurantSelect">เลือกร้านอาหาร:</label>
+      <select id="restaurantSelect">
+          <option value="">-- กรุณาเลือกร้าน --</option>
+      </select>
+      
+      <label for="rating">ให้คะแนน:</label>
+      <select id="rating">
+        <option value="5">⭐⭐⭐⭐⭐ ดีมาก</option>
+        <option value="4">⭐⭐⭐⭐ ดี</option>
+        <option value="3">⭐⭐⭐ ปานกลาง</option>
+        <option value="2">⭐⭐ พอใช้</option>
+        <option value="1">⭐ แย่</option>
+      </select>
+
+      <label for="comment">ความเห็นของคุณ:</label>
+      <textarea id="comment" placeholder="เขียนรีวิวของคุณที่นี่..."></textarea>
+      
+      <button id="submitBtn" onclick="addReview()">🚀 ส่งรีวิว</button>
+    </div>
+  </div>
+
+  <h2 style="margin-top: 40px;">💬 รีวิวล่าสุด</h2>
+  <div id="reviewList"></div>
+</div>
+
+<script src="reviews.js"></script>
+<script>
+    function goBack(){ window.history.back(); }
+    function goHome(){ window.location.href='home.html'; }
+</script>
+</body>
+</html>

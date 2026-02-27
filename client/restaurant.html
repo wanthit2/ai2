@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายละเอียดร้าน - FoodFinder</title>
+  <link rel="stylesheet" href="restaurant.css">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="hero">
+  <img id="resImage" src="https://via.placeholder.com/800x400?text=Loading+Image..." alt="Restaurant Image">
+</div>
+
+<div class="info">
+  <h2 id="resName">กำลังโหลดชื่อร้าน...</h2>
+  <p id="resDetail"></p>
+</div>
+
+<h3 class="menu-title">📍 ตำแหน่งร้าน</h3>
+<div class="map-container">
+  <iframe
+    id="mapFrame"
+    width="100%"
+    height="250"
+    style="border:0; border-radius: 15px;"
+    loading="lazy"
+    allowfullscreen
+    src="">
+  </iframe>
+</div>
+
+<h3 class="menu-title">🍱 เมนูอาหาร</h3>
+<div id="menuList" class="menu-grid">
+    <p style="padding: 20px; color: #64748b;">กำลังโหลดเมนู...</p>
+</div>
+
+<button class="back-btn" onclick="goBack()">← กลับ</button>
+
+<script src="restaurant.js"></script>
+</body>
+</html>
