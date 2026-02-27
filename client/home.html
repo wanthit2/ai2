@@ -80,7 +80,9 @@
 <script>
 // ✅ เปลี่ยน API_URL ให้ตรงกับ Railway ของคุณ
 const API_URL = "https://ai2-production-18cb.up.railway.app";
-
+const imgPath = shop.image_url 
+    ? shop.image_url 
+    : 'https://via.placeholder.com/400x300?text=No+Image';
 window.onload = function() {
     loadFeaturedShops();
     checkAuthStatus(); // ฟังก์ชันเช็คการ Login เบื้องต้น
