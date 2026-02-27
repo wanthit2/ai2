@@ -23,7 +23,11 @@ const upload = multer({ storage: storage });
 app.use(cors());
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'client'))); 
+app.use(express.static(path.join(__dirname, 'client')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client', 'login.html'));
+});
 
 // ฟังก์ชันช่วยอัปโหลดรูปไปยัง Supabase Storage
 async function uploadToSupabase(file, bucketName) {
