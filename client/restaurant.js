@@ -1,5 +1,6 @@
-const API_URL = "http://localhost:3000";
-let allFoods = []; // เก็บข้อมูลเมนูทั้งหมดไว้ที่นี่เพื่อใช้ค้นหา
+// 1. เปลี่ยนเป็น URL ของ Railway ให้เหมือนกับหน้า home
+const API_URL = "https://ai2-production-18cb.up.railway.app";
+let allFoods = []; 
 
 window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -12,68 +13,65 @@ window.onload = async function() {
     }
 
     try {
-        // 1. ดึงข้อมูลรายละเอียดร้าน
+        // ดึงข้อมูลรายละเอียดร้าน
         const shopRes = await fetch(`${API_URL}/get-shop/${shopId}`);
         const shop = await shopRes.json();
 
         document.getElementById("resName").textContent = shop.name;
         document.getElementById("resDetail").textContent = shop.hashtags || "#ร้านเด็ด";
         
+        // ✅ แก้ไข: ดึงรูปจาก image_url ตรงๆ (ลบ /uploads/ ออก)
         if (shop.image_url) {
-            document.getElementById("resImage").src = `${API_URL}/uploads/${shop.image_url}`;
+            document.getElementById("resImage").src = shop.image_url;
         }
 
-        // 2. จัดการแผนที่ (แก้ไข Bug URL)
+        // ✅ แก้ไข: จัดการแผนที่ (ลบส่วน http://googleusercontent... ออก)
         if (shop.lat && shop.lng) {
             document.getElementById("mapFrame").src = `https://www.google.com/maps?q=${shop.lat},${shop.lng}&output=embed`;
         }
 
-        // 3. โหลดเมนูอาหารเก็บไว้ใน allFoods
+        // โหลดเมนูอาหาร
         const foodRes = await fetch(`${API_URL}/get-foods/${shopId}`);
         allFoods = await foodRes.json();
-        renderMenus(allFoods); // แสดงเมนูทั้งหมดตอนเริ่มต้น
+        renderMenus(allFoods); 
 
     } catch (err) {
         console.error("Error:", err);
+        // แสดง Error ให้ผู้ใช้เห็นถ้าดึงข้อมูลไม่ได้
+        document.getElementById("resName").textContent = "❌ ไม่สามารถโหลดข้อมูลได้";
     }
 };
 
-// ฟังก์ชันวิเคราะห์ AI (ฉบับแก้บัคพิมพ์ราคาไม่เจอ)
+// ฟังก์ชันวิเคราะห์ AI
 function analyzeAI() {
     const userInput = document.getElementById("aiInput").value;
     const messageBox = document.getElementById("aiMessage");
     const messageText = document.getElementById("messageText");
 
-    // 1. ดึงตัวเลขจากประโยค (เช่น "100" หรือ "งบ 100")
     const priceMatch = userInput.match(/\d+/); 
     const budget = priceMatch ? parseInt(priceMatch[0]) : null;
 
-    // 2. กรองข้อมูล
     const filtered = allFoods.filter(food => {
         let match = true;
-        
-        // ถ้าพิมพ์ตัวเลขมา ให้กรองเมนูที่ราคา "ไม่เกิน" งบนั้น
         if (budget !== null) {
             match = match && (Number(food.price) <= budget);
         }
-        
-        // ถ้ามีข้อความอื่นๆ (เช่น ของหวาน, เส้น) ให้ค้นหาในชื่อเมนูด้วย
         const textOnly = userInput.replace(/[0-9]/g, '').replace('งบ', '').replace('มีเงิน', '').trim();
         if (textOnly.length > 0) {
             match = match && food.name.toLowerCase().includes(textOnly.toLowerCase());
         }
-
         return match;
     });
 
-    // 3. แสดงผลหรือแจ้งเตือน
     if (filtered.length > 0) {
-        messageBox.style.display = "none";
+        if(messageBox) messageBox.style.display = "none";
         renderMenus(filtered);
     } else {
-        messageBox.style.display = "block";
-        messageText.textContent = "เสียใจด้วยครับ AI หาเมนูที่ตรงเงื่อนไขไม่เจอ ลองปรับงบหรือเปลี่ยนหมวดดูนะครับ";
-        renderMenus([]); // ล้างหน้ารายการอาหาร
+        if(messageBox) {
+            messageBox.style.display = "block";
+            messageText.textContent = "เสียใจด้วยครับ AI หาเมนูไม่เจอ ลองปรับงบดูนะครับ";
+        }
+        renderMenus([]); 
     }
 }
 
@@ -81,17 +79,21 @@ function analyzeAI() {
 function renderMenus(foods) {
     const menuList = document.getElementById("menuList");
     if (foods.length === 0) {
-        menuList.innerHTML = "<p style='padding:20px; color:#999;'>ไม่มีรายการอาหาร</p>";
+        menuList.innerHTML = "<p style='padding:20px; color:#999; text-align:center;'>ไม่มีรายการอาหาร</p>";
         return;
     }
 
     menuList.innerHTML = foods.map(food => `
-        <div class="menu-item" style="display: flex; align-items: center; background: white; margin-bottom: 10px; padding: 10px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <img src="${food.image_url ? API_URL+'/uploads/'+food.image_url : 'https://via.placeholder.com/100'}" 
-                 style="width: 70px; height: 70px; object-fit: cover; border-radius: 10px;">
-            <div style="margin-left: 15px;">
-                <h4 style="margin: 0;">${food.name}</h4>
-                <p style="margin: 5px 0 0; color: #ef4444; font-weight: bold;">฿${food.price}</p>
+        <div class="menu-item" style="display: flex; align-items: center; background: white; margin-bottom: 15px; padding: 15px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <img src="${food.image_url ? food.image_url : 'https://placehold.co/100x100?text=No+Image'}" 
+                 onerror="this.src='https://placehold.co/100x100?text=No+Image'"
+                 style="width: 85px; height: 85px; object-fit: cover; border-radius: 15px;">
+            <div style="margin-left: 15px; flex: 1;">
+                <h4 style="margin: 0; font-size: 1.1rem;">${food.name}</h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                     <p style="margin: 0; color: #10b981; font-weight: bold; font-size: 1.2rem;">฿${food.price}</p>
+                     <small style="color: #94a3b8; background: #f1f5f9; padding: 2px 8px; border-radius: 6px;">${food.category || 'ทั่วไป'}</small>
+                </div>
             </div>
         </div>
     `).join('');
