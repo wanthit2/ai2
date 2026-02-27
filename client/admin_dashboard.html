@@ -56,7 +56,6 @@
         .btn-success { background: var(--success); color: white; }
         button:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-        /* Table Styling */
         .section-table { margin-top: 50px; background: white; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #f8fafc; padding: 15px; text-align: left; font-size: 0.9rem; color: #64748b; border-bottom: 2px solid #edf2f7; }
@@ -97,7 +96,7 @@
                 <input type="hidden" id="latInput"><input type="hidden" id="lngInput">
                 <div id="coordStatus" style="font-size: 0.75rem; margin-top:8px; font-weight: 600;"></div>
             </div>
-            <button class="btn-primary" onclick="saveShop()">➕ บันทึกข้อมูลร้านค้า</button>
+            <button class="btn-primary" id="shopBtn" onclick="saveShop()">➕ บันทึกข้อมูลร้านค้า</button>
         </div>
 
         <div class="card">
@@ -128,7 +127,7 @@
                     <input type="number" id="foodPriceInput" placeholder="ราคา (บาท)" style="flex: 1;">
                 </div>
             </div>
-            <button class="btn-success" onclick="saveFood()">💾 บันทึกเมนูอาหาร</button>
+            <button class="btn-success" id="foodBtn" onclick="saveFood()">💾 บันทึกเมนูอาหาร</button>
         </div>
     </div>
 
@@ -154,9 +153,9 @@
 </div>
 
 <script>
+    // ✅ 1. ตรวจสอบ API URL ให้ถูกต้อง
     const API_URL = "https://ai2-production-18cb.up.railway.app";
 
-    // --- ฟังก์ชันพรีวิวรูปภาพ ---
     function preview(event, viewerId) {
         const viewer = document.getElementById(viewerId);
         const file = event.target.files[0];
@@ -167,7 +166,6 @@
         }
     }
 
-    // --- ฟังก์ชันดึงละติจูด/ลองจิจูดจากลิงก์ Google Maps ---
     function extractCoords(link) {
         const regex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
         const match = link.match(regex);
@@ -180,17 +178,14 @@
         }
     }
 
-    // --- โหลดข้อมูลร้านค้าและอาหารทั้งหมดเมื่อเปิดหน้าเว็บ ---
     async function loadInitialData() {
         try {
-            // โหลดร้านค้าเข้า Dropdown
             const resShops = await fetch(`${API_URL}/get-shops`);
             const shops = await resShops.json();
             const select = document.getElementById("shopSelect");
             select.innerHTML = '<option value="">-- เลือกสาขา/ร้านค้า --</option>';
             shops.forEach(s => select.innerHTML += `<option value="${s.id}">${s.name}</option>`);
 
-            // โหลดรายการอาหารลงตาราง
             const resFoods = await fetch(`${API_URL}/get-all-foods`); 
             const foods = await resFoods.json();
             const tableBody = document.getElementById("allFoodTableBody");
@@ -202,10 +197,13 @@
             }
 
             foods.forEach(f => {
-                const img = f.image_url ? `${API_URL}/uploads/${f.image_url}` : 'https://via.placeholder.com/50';
+                // ✅ 2. แก้ไขการแสดงรูปภาพ: ใช้ image_url ตรงๆ เพราะตอนนี้เราเก็บเป็นลิงก์ Supabase แล้ว
+                // ไม่ต้องบวก `${API_URL}/uploads/` อีกต่อไป
+                const img = f.image_url ? f.image_url : 'https://via.placeholder.com/50';
+                
                 tableBody.innerHTML += `
                     <tr>
-                        <td><img src="${img}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;"></td>
+                        <td><img src="${img}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;" onerror="this.src='https://via.placeholder.com/50'"></td>
                         <td><strong>${f.name}</strong></td>
                         <td><small>📍 ${f.shop_name || 'ไม่ระบุร้าน'}</small></td>
                         <td><span class="badge badge-cat">${f.category || 'ทั่วไป'}</span></td>
@@ -224,10 +222,13 @@
         }
     }
 
-    // --- บันทึกร้านค้าใหม่ ---
     async function saveShop() {
         const name = document.getElementById("shopNameInput").value;
+        const btn = document.getElementById("shopBtn");
         if(!name) return alert("กรุณาระบุชื่อร้าน");
+
+        btn.disabled = true;
+        btn.innerText = "⏳ กำลังบันทึก...";
 
         const formData = new FormData();
         formData.append('shopName', name);
@@ -235,19 +236,29 @@
         formData.append('lat', document.getElementById("latInput").value);
         formData.append('lng', document.getElementById("lngInput").value);
 
-        const res = await fetch(`${API_URL}/add-shop`, { method: 'POST', body: formData });
-        const result = await res.json();
-        alert(result.message);
-        location.reload(); // รีโหลดเพื่ออัปเดต List ร้านค้า
+        try {
+            const res = await fetch(`${API_URL}/add-shop`, { method: 'POST', body: formData });
+            const result = await res.json();
+            alert(result.message);
+            location.reload();
+        } catch (err) {
+            alert("บันทึกร้านค้าล้มเหลว");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "➕ บันทึกข้อมูลร้านค้า";
+        }
     }
 
-    // --- บันทึกเมนูอาหารใหม่ ---
     async function saveFood() {
         const shopId = document.getElementById("shopSelect").value;
         const name = document.getElementById("foodNameInput").value;
         const price = document.getElementById("foodPriceInput").value;
+        const btn = document.getElementById("foodBtn");
 
         if(!shopId || !name || !price) return alert("กรุณากรอกข้อมูลอาหารให้ครบถ้วน");
+
+        btn.disabled = true;
+        btn.innerText = "⏳ กำลังบันทึก...";
 
         const formData = new FormData();
         formData.append('shopId', shopId);
@@ -256,13 +267,23 @@
         formData.append('category', document.getElementById("foodCategoryInput").value);
         formData.append('foodImage', document.getElementById("foodImageInput").files[0]);
 
-        const res = await fetch(`${API_URL}/add-food`, { method: 'POST', body: formData });
-        const result = await res.json();
-        alert(result.message);
-        loadInitialData(); // รีโหลดตารางอาหาร
+        try {
+            const res = await fetch(`${API_URL}/add-food`, { method: 'POST', body: formData });
+            const result = await res.json();
+            alert(result.message);
+            loadInitialData();
+            // ล้างฟอร์ม
+            document.getElementById("foodNameInput").value = "";
+            document.getElementById("foodPriceInput").value = "";
+            document.getElementById("foodPreview").innerHTML = "<small>ยังไม่มีรูปภาพ</small>";
+        } catch (err) {
+            alert("บันทึกเมนูอาหารล้มเหลว");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "💾 บันทึกเมนูอาหาร";
+        }
     }
 
-    // --- ลบข้อมูลอาหาร ---
     async function deleteFood(id) {
         if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบเมนูนี้? (ข้อมูลจะหายถาวร)")) return;
         
@@ -276,7 +297,6 @@
         }
     }
 
-    // รันฟังก์ชันโหลดข้อมูลทันทีที่เปิดหน้า
     window.onload = loadInitialData;
 </script>
 
