@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
-    /* ปรับแต่ง Style เพิ่มเติมเพื่อความสวยงาม */
     body { font-family: 'Prompt', sans-serif; margin: 0; background-color: #f9fafb; }
     .restaurant-grid { 
         display: grid; 
@@ -30,8 +29,6 @@
     .card-info h3 { margin: 0; font-size: 1.2rem; color: #1e293b; }
     .card-info p { color: #6366f1; font-size: 0.9rem; margin: 8px 0; font-weight: 500; }
     .open-tag { color: #10b981; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 5px; }
-    
-    /* สไตล์สำหรับปุ่ม Logout */
     .logout-btn { background: #ef4444; color: white; padding: 8px 16px; border-radius: 10px; border: none; cursor: pointer; }
   </style>
 </head>
@@ -78,22 +75,17 @@
 </section>
 
 <script>
-// ✅ เปลี่ยน API_URL ให้ตรงกับ Railway ของคุณ
 const API_URL = "https://ai2-production-18cb.up.railway.app";
-const imgPath = shop.image_url 
-    ? shop.image_url 
-    : 'https://via.placeholder.com/400x300?text=No+Image';
+
 window.onload = function() {
     loadFeaturedShops();
-    checkAuthStatus(); // ฟังก์ชันเช็คการ Login เบื้องต้น
+    checkAuthStatus(); // เช็ค Login จาก auth.js
 };
 
-// 1. ดึงข้อมูลร้านค้ามาแสดงผล
 async function loadFeaturedShops() {
     try {
-        // ดึงข้อมูลจาก Route /get-shops ที่คุณเพิ่มใน server.js
-        const response = await fetch(`${API_URL}/get-shops`);
-        if (!response.ok) throw new Error("ไม่สามารถดึงข้อมูลร้านได้");
+        const response = await fetch(`${API_URL}/get-shops`); // ตรวจสอบว่า Backend มี Route นี้
+        if (!response.ok) throw new Error("ดึงข้อมูลร้านไม่ได้");
         
         const shops = await response.json();
         const display = document.getElementById("featuredRestaurants");
@@ -104,9 +96,8 @@ async function loadFeaturedShops() {
             return;
         }
 
-        // แสดงผลร้านค้า (จำกัด 6 ร้านแรก)
         shops.slice(0, 6).forEach(shop => {
-            // ✅ แก้ไข: ใช้ shop.image_url ตรงๆ ไม่ต้องบวก /uploads/ เพราะเป็น URL จาก Supabase
+            // ✅ แก้ไข: ใช้ shop.image_url ตรงๆ เพราะเป็น URL จาก Supabase
             const imgPath = shop.image_url 
                 ? shop.image_url 
                 : 'https://via.placeholder.com/400x300?text=No+Image';
@@ -124,11 +115,10 @@ async function loadFeaturedShops() {
         });
     } catch (error) {
         console.error("Error:", error);
-        document.getElementById("featuredRestaurants").innerHTML = "<p>⚠️ เกิดข้อผิดพลาดในการโหลดข้อมูล</p>";
+        document.getElementById("featuredRestaurants").innerHTML = "<p>⚠️ ไม่สามารถโหลดข้อมูลได้ (ตรวจสอบเซิร์ฟเวอร์)</p>";
     }
 }
 
-// 2. ระบบเช็คสถานะ Login เบื้องต้น (ทำงานร่วมกับ auth.js)
 function checkAuthStatus() {
     const user = localStorage.getItem("user");
     const authBtn = document.getElementById("authBtn");
@@ -138,17 +128,14 @@ function checkAuthStatus() {
         welcomeText.innerText = `สวัสดีคุณ ${user} 👋 ค้นหาของอร่อยกัน!`;
         authBtn.innerText = "Logout";
         authBtn.className = "logout-btn";
-        authBtn.onclick = logout; // ใช้ฟังก์ชัน logout จาก auth.js
+        authBtn.onclick = logout; // ฟังก์ชันจาก auth.js
     }
 }
 
-// 3. ระบบค้นหา
 function handleSearch() {
     const keyword = document.getElementById("homeSearch").value;
     if(keyword) {
         window.location.href = `restaurants.html?search=${encodeURIComponent(keyword)}`;
-    } else {
-        alert("กรุณาพิมพ์ชื่อเมนูหรือร้านค้าที่ต้องการค้นหา");
     }
 }
 
