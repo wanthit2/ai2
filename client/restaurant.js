@@ -2,6 +2,26 @@
 const API_URL = "https://ai2-production-18cb.up.railway.app";
 let allFoods = []; 
 
+async function loadShopData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopId = urlParams.get('id');
+
+    try {
+        // ตรวจสอบว่าใน server.js ใช้ path นี้จริงๆ หรือไม่
+        const response = await fetch(`${API_URL}/get-shop/${shopId}`); 
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const shop = await response.json();
+        // นำข้อมูลไปแสดงผล...
+        document.getElementById("resName").textContent = shop.name;
+        document.getElementById("resImage").src = shop.image_url; // ใช้ URL ตรงจาก Supabase
+    } catch (error) {
+        console.error("Error loading shop:", error);
+        document.getElementById("resName").textContent = "❌ ไม่พบข้อมูลร้านค้า";
+    }
+}
+
 window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const shopId = urlParams.get('id');
