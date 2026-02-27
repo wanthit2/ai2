@@ -41,9 +41,10 @@ window.onload = async function() {
         document.getElementById("resDetail").textContent = shop.hashtags || "#ร้านเด็ด";
         
         // ✅ แก้ไข: ดึงรูปจาก image_url ตรงๆ (ลบ /uploads/ ออก)
-        if (shop.image_url) {
-            document.getElementById("resImage").src = shop.image_url;
-        }
+          if (shop.image_url) {
+              // ใช้ URL ตรงจาก Supabase ที่เก็บไว้ใน DB
+            document.getElementById("resImage").src = shop.image_url; 
+           }
 
         // ✅ แก้ไข: จัดการแผนที่ (ลบส่วน http://googleusercontent... ออก)
         if (shop.lat && shop.lng) {
