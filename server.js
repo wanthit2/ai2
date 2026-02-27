@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { createClient } = require('@supabase/supabase-js'); // ✅ เพิ่ม Supabase SDK
 const db = require("./db");
 
