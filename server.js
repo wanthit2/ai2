@@ -199,6 +199,14 @@ app.delete("/delete-food/:id", (req, res) => {
     });
 });
 
+// เพิ่มไว้ในส่วน SHOP MANAGEMENT
+app.get("/get-shops", (req, res) => {
+    db.query("SELECT id, name FROM shops ORDER BY name ASC", (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json(result.rows);
+    });
+});
+
 // ================= START SERVER ================= //
 
 const PORT = process.env.PORT || 3000;
