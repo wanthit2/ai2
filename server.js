@@ -178,15 +178,14 @@ app.delete("/delete-food/:id", (req, res) => {
     });
 });
 
-// เพิ่มไว้ก่อนส่วน START SERVER
-app.get("/get-food/:id", (req, res) => {
-    db.query("SELECT * FROM foods WHERE id = $1", [req.params.id], (err, result) => {
+// 2. สำหรับดึงรายการอาหารทั้งหมดที่สังกัดร้านนี้ (ดึงมาโชว์ในหน้าเมนูร้าน)
+app.get("/get-foods/:shopId", (req, res) => {
+    const shopId = req.params.shopId;
+    db.query("SELECT * FROM foods WHERE shop_id = $1", [shopId], (err, result) => {
         if (err) return res.status(500).json(err);
-        if (result.rows.length === 0) return res.status(404).json({ message: "ไม่พบข้อมูล" });
-        res.json(result.rows[0]);
+        res.json(result.rows);
     });
 });
-
 // ================= START SERVER ================= //
 
 const PORT = process.env.PORT || 3000;
