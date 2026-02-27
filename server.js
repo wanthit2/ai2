@@ -207,6 +207,25 @@ app.get("/get-shops", (req, res) => {
     });
 });
 
+// ดึงข้อมูลอาหารรายชิ้น (สำหรับหน้าแก้ไข)
+app.get("/get-food/:id", (req, res) => {
+    const foodId = req.params.id;
+    const sql = "SELECT * FROM foods WHERE id = $1";
+    db.query(sql, [foodId], (err, result) => {
+        if (err) return res.status(500).json(err);
+        if (result.rows.length === 0) return res.status(404).json({ message: "ไม่พบข้อมูลเมนูนี้" });
+        res.json(result.rows[0]);
+    });
+});
+
+// ดึงรายชื่อร้านค้า (สำหรับ Dropdown ในหน้า Admin ที่ยัง Error 404 อยู่)
+app.get("/get-shops", (req, res) => {
+    db.query("SELECT id, name FROM shops ORDER BY name ASC", (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json(result.rows);
+    });
+});
+
 // ================= START SERVER ================= //
 
 const PORT = process.env.PORT || 3000;
