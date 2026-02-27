@@ -3,19 +3,17 @@ const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const bcrypt = require("bcryptjs");
-const { createClient } = require('@supabase/supabase-js'); // ✅ เพิ่ม Supabase SDK
+const { createClient } = require('@supabase/supabase-js'); 
 const db = require("./db");
 
 const app = express();
 
 // ================= 1. ตั้งค่า SUPABASE STORAGE ================= //
-// ⚠️ นำค่าจากหน้า Settings > API ใน Supabase มาใส่ตรงนี้ครับ
 const supabaseUrl = 'https://kphjykhlpvpqwwufwekl.supabase.co'; 
 const supabaseKey = 'sb_publishable_uahXEE9ExsQytMck2dxA6A_Hcl5SE7w'; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ================= 2. ตั้งค่า MULTER (MEMORY STORAGE) ================= //
-// ✅ เปลี่ยนมาใช้ Memory เพื่อส่งรูปต่อไปยัง Cloud โดยไม่ค้างในเครื่อง Railway
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -48,7 +46,7 @@ async function uploadToSupabase(file, bucketName) {
         .from(bucketName)
         .getPublicUrl(fileName);
 
-    return publicUrlData.publicUrl; // ส่ง URL เต็มกลับไปบันทึกใน DB
+    return publicUrlData.publicUrl; 
 }
 
 // ================= AUTHENTICATION ================= //
@@ -81,10 +79,18 @@ app.post("/login", (req, res) => {
 
 // ================= SHOP MANAGEMENT ================= //
 
+// ดึงรายชื่อร้านค้าทั้งหมด (ปรับให้ดึงทุกฟิลด์เพื่อหน้า Home และหน้า Admin)
+app.get("/get-shops", (req, res) => {
+    // ✅ ดึง image_url และ hashtags มาด้วย เพื่อให้หน้า Home แสดงผลได้ครบ
+    db.query("SELECT * FROM shops ORDER BY id DESC", (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json(result.rows);
+    });
+});
+
 app.post("/add-shop", upload.single('shopImage'), async (req, res) => {
     try {
         const { shopName, hashtags, lat, lng } = req.body;
-        // ✅ อัปโหลดไป Supabase (Bucket: food-images)
         const imageUrl = await uploadToSupabase(req.file, 'food-images');
 
         const sql = "INSERT INTO shops (name, hashtags, lat, lng, image_url) VALUES ($1, $2, $3, $4, $5)";
@@ -97,14 +103,10 @@ app.post("/add-shop", upload.single('shopImage'), async (req, res) => {
     }
 });
 
-// สำหรับดึงข้อมูลรายละเอียดร้านค้า (ชื่อร้าน, รูปหน้าร้าน, พิกัด)
 app.get("/get-shop/:id", (req, res) => {
     const shopId = req.params.id;
     db.query("SELECT * FROM shops WHERE id = $1", [shopId], (err, result) => {
-        if (err) {
-            console.error("DB Error:", err);
-            return res.status(500).json(err);
-        }
+        if (err) return res.status(500).json(err);
         if (result.rows.length === 0) return res.status(404).json({ message: "ไม่พบข้อมูลร้านค้า" });
         res.json(result.rows[0]);
     });
@@ -114,22 +116,15 @@ app.get("/get-shop/:id", (req, res) => {
 
 app.post("/add-food", upload.single('foodImage'), async (req, res) => {
     try {
-        console.log("Body:", req.body); // ดูว่าข้อมูลมาครบไหม
-        console.log("File:", req.file); // ดูว่าไฟล์มาไหม
-        
         const { shopId, foodName, price, category } = req.body;
         const imageUrl = await uploadToSupabase(req.file, 'food-images');
 
         const sql = "INSERT INTO foods (shop_id, name, price, category, image_url) VALUES ($1, $2, $3, $4, $5)";
         db.query(sql, [shopId, foodName, price, category, imageUrl], (dbErr, result) => {
-            if (dbErr) {
-                console.error("DB Error:", dbErr); // <--- เพิ่มตรงนี้
-                return res.status(500).json({ error: dbErr.message });
-            }
+            if (dbErr) return res.status(500).json({ error: dbErr.message });
             res.json({ message: "เพิ่มเมนูอาหารสำเร็จ!", imageUrl });
         });
     } catch (err) {
-        console.error("Catch Error:", err); // <--- เพิ่มตรงนี้
         res.status(500).json({ error: "Upload failed: " + err.message });
     }
 });
@@ -144,6 +139,23 @@ app.get("/get-all-foods", (req, res) => {
     db.query(sql, (err, result) => {
         if (err) return res.status(500).json(err);
         res.json(result.rows);
+    });
+});
+
+app.get("/get-foods/:shopId", (req, res) => {
+    const shopId = req.params.shopId;
+    db.query("SELECT * FROM foods WHERE shop_id = $1", [shopId], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json(result.rows);
+    });
+});
+
+app.get("/get-food/:id", (req, res) => {
+    const foodId = req.params.id;
+    db.query("SELECT * FROM foods WHERE id = $1", [foodId], (err, result) => {
+        if (err) return res.status(500).json(err);
+        if (result.rows.length === 0) return res.status(404).json({ message: "ไม่พบข้อมูลเมนูนี้" });
+        res.json(result.rows[0]);
     });
 });
 
@@ -173,56 +185,8 @@ app.post("/update-food", upload.single('foodImage'), async (req, res) => {
 
 app.delete("/delete-food/:id", (req, res) => {
     db.query("DELETE FROM foods WHERE id = $1", [req.params.id], (err, result) => {
-        if (err) return res.status(500).json(err);
+        if (err) return res.status(500).json({ message: "ไม่สามารถลบข้อมูลได้" });
         res.json({ message: "ลบเมนูเรียบร้อย!" });
-    });
-});
-
-// 2. สำหรับดึงรายการอาหารทั้งหมดที่สังกัดร้านนี้ (ดึงมาโชว์ในหน้าเมนูร้าน)
-app.get("/get-foods/:shopId", (req, res) => {
-    const shopId = req.params.shopId;
-    db.query("SELECT * FROM foods WHERE shop_id = $1", [shopId], (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json(result.rows);
-    });
-});
-
-// เพิ่ม Route สำหรับลบเมนูอาหาร
-app.delete("/delete-food/:id", (req, res) => {
-    const foodId = req.params.id;
-    db.query("DELETE FROM foods WHERE id = $1", [foodId], (err, result) => {
-        if (err) {
-            console.error("Delete Error:", err);
-            return res.status(500).json({ message: "ไม่สามารถลบข้อมูลได้" });
-        }
-        res.json({ message: "ลบเมนูอาหารเรียบร้อยแล้ว" });
-    });
-});
-
-// เพิ่มไว้ในส่วน SHOP MANAGEMENT
-app.get("/get-shops", (req, res) => {
-    db.query("SELECT id, name FROM shops ORDER BY name ASC", (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json(result.rows);
-    });
-});
-
-// ดึงข้อมูลอาหารรายชิ้น (สำหรับหน้าแก้ไข)
-app.get("/get-food/:id", (req, res) => {
-    const foodId = req.params.id;
-    const sql = "SELECT * FROM foods WHERE id = $1";
-    db.query(sql, [foodId], (err, result) => {
-        if (err) return res.status(500).json(err);
-        if (result.rows.length === 0) return res.status(404).json({ message: "ไม่พบข้อมูลเมนูนี้" });
-        res.json(result.rows[0]);
-    });
-});
-
-// ดึงรายชื่อร้านค้า (สำหรับ Dropdown ในหน้า Admin ที่ยัง Error 404 อยู่)
-app.get("/get-shops", (req, res) => {
-    db.query("SELECT id, name FROM shops ORDER BY name ASC", (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json(result.rows);
     });
 });
 
