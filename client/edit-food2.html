@@ -72,8 +72,6 @@
         
         .btn-back { background: transparent; color: var(--secondary); border: 1.5px solid #e2e8f0; }
         .btn-back:hover { background: #f8fafc; color: var(--text-main); }
-
-        .loader { color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -117,46 +115,50 @@
     </div>
 
     <div class="btn-stack">
-        <button class="btn-save" onclick="submitEdit()">💾 บันทึกการแก้ไขข้อมูล</button>
+        <button class="btn-save" id="saveBtn" onclick="submitEdit()">💾 บันทึกการแก้ไขข้อมูล</button>
         <button class="btn-back" onclick="history.back()">🔙 ย้อนกลับ</button>
     </div>
 </div>
 
 <script>
-    const API_URL = "http://localhost:3000";
+    // ✅ 1. แก้ไข API URL ให้ชี้ไปที่เซิร์ฟเวอร์ Railway ของคุณ
+    const API_URL = "https://ai2-production-18cb.up.railway.app"; 
     const params = new URLSearchParams(window.location.search);
     const foodId = params.get('id');
 
-    // 1. ดึงข้อมูลเดิมมาเติมในฟอร์ม
+    // 2. ดึงข้อมูลเดิมมาเติมในฟอร์ม
     window.onload = async () => {
         if (!foodId) {
             alert("❌ ไม่พบรหัสอาหาร (ID)");
-            window.location.href = 'admin.html';
+            window.location.href = 'admin_dashboard.html';
             return;
         }
 
         try {
+            // ดึงข้อมูลรายเมนูจาก Backend
             const res = await fetch(`${API_URL}/get-food/${foodId}`);
             if (!res.ok) throw new Error("Fetch failed");
             const food = await res.json();
 
+            // นำข้อมูลไปใส่ใน Input ต่างๆ
             document.getElementById('foodName').value = food.name;
             document.getElementById('foodPrice').value = food.price;
             document.getElementById('foodCategory').value = food.category || 'ทั่วไป';
             
+            // ✅ แสดงรูปภาพ (ดึงจาก Supabase URL ตรงๆ ไม่ผ่าน /uploads/)
             if (food.image_url) {
                 const imgTag = document.getElementById('currentImage');
-                imgTag.src = `${API_URL}/uploads/${food.image_url}`;
+                imgTag.src = food.image_url; 
                 imgTag.style.display = 'block';
                 document.getElementById('placeholder').style.display = 'none';
             }
         } catch (err) {
-            console.error(err);
-            alert("⚠️ ไม่สามารถโหลดข้อมูลเมนูได้");
+            console.error("Error loading food data:", err);
+            alert("⚠️ ไม่สามารถโหลดข้อมูลเมนูได้ (ตรวจสอบการเชื่อมต่อ Database)");
         }
     };
 
-    // 2. จัดการการเลือกรูปภาพใหม่
+    // 3. จัดการการเลือกรูปภาพใหม่ (Preview)
     function handleImageChange(event) {
         const file = event.target.files[0];
         if (file) {
@@ -171,17 +173,22 @@
         }
     }
 
-    // 3. ส่งข้อมูลไปอัปเดตที่เซิร์ฟเวอร์
+    // 4. ส่งข้อมูลไปอัปเดตที่เซิร์ฟเวอร์
     async function submitEdit() {
         const name = document.getElementById('foodName').value;
         const price = document.getElementById('foodPrice').value;
         const category = document.getElementById('foodCategory').value;
         const fileInput = document.getElementById('fileInput');
+        const saveBtn = document.getElementById('saveBtn');
 
         if (!name || !price) {
             alert("⚠️ กรุณากรอกชื่อเมนูและราคาให้ครบถ้วน");
             return;
         }
+
+        // แสดงสถานะกำลังโหลด
+        saveBtn.disabled = true;
+        saveBtn.innerText = "⏳ กำลังบันทึก...";
 
         const formData = new FormData();
         formData.append('id', foodId);
@@ -194,6 +201,7 @@
         }
 
         try {
+            // ส่งข้อมูลไปยัง API update-food ของคุณ
             const res = await fetch(`${API_URL}/update-food`, {
                 method: 'POST',
                 body: formData
@@ -204,10 +212,14 @@
                 alert("✅ แก้ไขข้อมูลเรียบร้อย!");
                 window.location.href = 'admin_dashboard.html';
             } else {
-                alert("❌ เกิดข้อผิดพลาด: " + data.message);
+                alert("❌ เกิดข้อผิดพลาด: " + (data.error || data.message));
             }
         } catch (err) {
-            alert("❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+            console.error("Submit Error:", err);
+            alert("❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ (Network Error)");
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "💾 บันทึกการแก้ไขข้อมูล";
         }
     }
 </script>
