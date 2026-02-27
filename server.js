@@ -108,15 +108,22 @@ app.get("/get-shops", (req, res) => {
 
 app.post("/add-food", upload.single('foodImage'), async (req, res) => {
     try {
+        console.log("Body:", req.body); // ดูว่าข้อมูลมาครบไหม
+        console.log("File:", req.file); // ดูว่าไฟล์มาไหม
+        
         const { shopId, foodName, price, category } = req.body;
         const imageUrl = await uploadToSupabase(req.file, 'food-images');
 
         const sql = "INSERT INTO foods (shop_id, name, price, category, image_url) VALUES ($1, $2, $3, $4, $5)";
         db.query(sql, [shopId, foodName, price, category, imageUrl], (dbErr, result) => {
-            if (dbErr) return res.status(500).json({ error: dbErr.message });
+            if (dbErr) {
+                console.error("DB Error:", dbErr); // <--- เพิ่มตรงนี้
+                return res.status(500).json({ error: dbErr.message });
+            }
             res.json({ message: "เพิ่มเมนูอาหารสำเร็จ!", imageUrl });
         });
     } catch (err) {
+        console.error("Catch Error:", err); // <--- เพิ่มตรงนี้
         res.status(500).json({ error: "Upload failed: " + err.message });
     }
 });
