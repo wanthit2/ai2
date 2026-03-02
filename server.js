@@ -208,15 +208,6 @@ app.get("/get-reviews", (req, res) => {
     });
 });
 
-// --- แก้ไข Route SHOPS ที่มีอยู่เดิมให้ดึงข้อมูลครบ (แก้ปัญหาหน้า Home รูปไม่ขึ้น) ---
-app.get("/get-shops", (req, res) => {
-    // ต้อง SELECT * เพื่อให้ได้ image_url และ hashtags มาแสดงในการ์ด
-    db.query("SELECT * FROM shops ORDER BY id DESC", (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json(result.rows);
-    });
-});
-
 // ================= START SERVER ================= //
 
 const PORT = process.env.PORT || 3000;
