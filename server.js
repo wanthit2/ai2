@@ -190,6 +190,23 @@ app.delete("/delete-food/:id", (req, res) => {
     });
 });
 
+// 1. บันทึกรีวิว (add-review)
+app.post("/add-review", (req, res) => {
+    const { userName, restaurantName, rating, comment } = req.body;
+    const sql = "INSERT INTO reviews (user_name, restaurant_name, rating, comment) VALUES ($1, $2, $3, $4)";
+    db.query(sql, [userName, restaurantName, rating, comment], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "ขอบคุณสำหรับรีวิวครับ!" });
+    });
+});
+
+// 2. ดึงรีวิวทั้งหมด (get-reviews)
+app.get("/get-reviews", (req, res) => {
+    db.query("SELECT * FROM reviews ORDER BY created_at DESC", (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json(result.rows);
+    });
+});
 // ================= START SERVER ================= //
 
 const PORT = process.env.PORT || 3000;
